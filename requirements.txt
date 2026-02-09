@@ -1,0 +1,10 @@
+# Core dependencies (required for both interfaces)
+qwen-tts>=0.1.0
+torch>=2.0.0
+soundfile>=0.12.0
+
+# Desktop GUI dependencies
+pygame>=2.5.0
+
+# Web interface dependencies (optional)
+flask>=2.0.0

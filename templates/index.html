@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen TTS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .model-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .status-loaded { background: #28a745; }
+        .status-not-loaded { background: #dc3545; }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        select.form-control {
+            cursor: pointer;
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
+        }
+        .speaker-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .hint {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 5px;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .audio-player {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        .audio-player.active {
+            display: block;
+        }
+        .audio-player h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        audio {
+            width: 100%;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading.active {
+            display: block;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #dc3545;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        .error.active {
+            display: block;
+        }
+        .success {
+            color: #155724;
+            padding: 10px;
+            background: #d4edda;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        .success.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Qwen TTS</h1>
+            <p>Text-to-Speech with Style Control</p>
+        </div>
+        <div class="content">
+            <div class="model-status">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span id="statusText">Loading...</span>
+                <button class="btn btn-primary" id="loadModelBtn">Load Model</button>
+            </div>
+
+            <form id="ttsForm">
+                <div class="form-group">
+                    <label for="speaker">Speaker</label>
+                    <select class="form-control" id="speaker" name="speaker">
+                        <option value="Vivian">Vivian (Chinese)</option>
+                        <option value="Serena">Serena (Chinese)</option>
+                        <option value="Uncle_Fu">Uncle_Fu (Chinese)</option>
+                        <option value="Dylan">Dylan (Chinese - Beijing)</option>
+                        <option value="Eric">Eric (Chinese - Sichuan)</option>
+                        <option value="Ryan">Ryan (English)</option>
+                        <option value="Aiden">Aiden (English)</option>
+                        <option value="Ono_Anna">Ono_Anna (Japanese)</option>
+                        <option value="Sohee">Sohee (Korean)</option>
+                    </select>
+                    <div class="speaker-info" id="speakerInfo">Bright, slightly edgy young female voice</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="language">Language</label>
+                    <select class="form-control" id="language" name="language">
+                        <option value="Auto">Auto</option>
+                        <option value="Chinese">Chinese</option>
+                        <option value="English">English</option>
+                        <option value="Japanese">Japanese</option>
+                        <option value="Korean">Korean</option>
+                        <option value="German">German</option>
+                        <option value="French">French</option>
+                        <option value="Russian">Russian</option>
+                        <option value="Portuguese">Portuguese</option>
+                        <option value="Spanish">Spanish</option>
+                        <option value="Italian">Italian</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="instruct">Instruction (Optional)</label>
+                    <input type="text" class="form-control" id="instruct" name="instruct"
+                           placeholder="e.g., speak happily, whisper, angry tone">
+                    <div class="hint">Control tone, emotion, and speaking style with natural language</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="text">Text to Synthesize</label>
+                    <textarea class="form-control" id="text" name="text" placeholder="Enter your text here..."></textarea>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" class="btn btn-primary" id="generateBtn" disabled>
+                        Generate Speech
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="downloadBtn" disabled>
+                        Download WAV
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="sampleBtn">
+                        Load Sample
+                    </button>
+                </div>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Generating speech... This may take a moment.</p>
+            </div>
+
+            <div class="error" id="error"></div>
+            <div class="success" id="success"></div>
+
+            <div class="audio-player" id="audioPlayer">
+                <h3>Generated Audio</h3>
+                <audio id="audio" controls></audio>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const speakers = {
+            "Vivian": { desc: "Bright, slightly edgy young female voice", sample: "其实我真的有发现，我是一个特别善于观察别人情绪的人。" },
+            "Serena": { desc: "Warm, gentle young female voice", sample: "在这个世界上，最美好的事情就是和家人一起度过温馨的时光。" },
+            "Uncle_Fu": { desc: "Seasoned male voice with low, mellow timbre", sample: "年轻人啊，做事要稳扎稳打，不能急于求成。" },
+            "Dylan": { desc: "Youthful Beijing male voice", sample: "这事儿吧，我觉得得这么办，您说是不是这个理儿？" },
+            "Eric": { desc: "Lively Chengdu male voice", sample: "哎呀，这个火锅巴适得很，咱们再去整一顿嘛！" },
+            "Ryan": { desc: "Dynamic male voice with strong rhythmic drive", sample: "She said she would be here by noon, but I haven't seen her yet." },
+            "Aiden": { desc: "Sunny American male voice with clear midrange", sample: "The sun is shining bright today, perfect for a picnic in the park!" },
+            "Ono_Anna": { desc: "Playful Japanese female voice", sample: "おはようございます！今日も一日頑張りましょうね！" },
+            "Sohee": { desc: "Warm Korean female voice with rich emotion", sample: "안녕하세요! 오늘 날씨가 정말 좋네요." }
+        };
+
+        let currentAudio = null;
+
+        document.getElementById('speaker').addEventListener('change', function() {
+            const info = speakers[this.value];
+            document.getElementById('speakerInfo').textContent = info.desc;
+        });
+
+        document.getElementById('loadModelBtn').addEventListener('click', async function() {
+            this.disabled = true;
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('error').classList.remove('active');
+
+            try {
+                const response = await fetch('/api/load_model', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('statusText').textContent = `Model loaded on ${data.device}`;
+                    document.getElementById('statusIndicator').className = 'status-indicator status-loaded';
+                    document.getElementById('generateBtn').disabled = false;
+                    document.getElementById('success').textContent = 'Model loaded successfully!';
+                    document.getElementById('success').classList.add('active');
+                    setTimeout(() => document.getElementById('success').classList.remove('active'), 3000);
+                } else {
+                    throw new Error(data.error || 'Failed to load model');
+                }
+            } catch (err) {
+                document.getElementById('error').textContent = err.message;
+                document.getElementById('error').classList.add('active');
+                this.disabled = false;
+            }
+
+            document.getElementById('loading').classList.remove('active');
+        });
+
+        document.getElementById('ttsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const text = document.getElementById('text').value.trim();
+            if (!text) {
+                document.getElementById('error').textContent = 'Please enter some text';
+                document.getElementById('error').classList.add('active');
+                return;
+            }
+
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('error').classList.remove('active');
+            document.getElementById('audioPlayer').classList.remove('active');
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        speaker: document.getElementById('speaker').value,
+                        language: document.getElementById('language').value,
+                        instruct: document.getElementById('instruct').value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                currentAudio = data.audio;
+                const audioUrl = 'data:audio/wav;base64,' + data.audio;
+                document.getElementById('audio').src = audioUrl;
+                document.getElementById('audioPlayer').classList.add('active');
+                document.getElementById('downloadBtn').disabled = false;
+
+            } catch (err) {
+                document.getElementById('error').textContent = err.message;
+                document.getElementById('error').classList.add('active');
+            }
+
+            document.getElementById('loading').classList.remove('active');
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', async function() {
+            const text = document.getElementById('text').value.trim();
+
+            try {
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text,
+                        speaker: document.getElementById('speaker').value,
+                        language: document.getElementById('language').value,
+                        instruct: document.getElementById('instruct').value
+                    })
+                });
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `qwen_tts_${document.getElementById('speaker').value}_${Date.now()}.wav`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+            } catch (err) {
+                document.getElementById('error').textContent = err.message;
+                document.getElementById('error').classList.add('active');
+            }
+        });
+
+        document.getElementById('sampleBtn').addEventListener('click', function() {
+            const speaker = document.getElementById('speaker').value;
+            document.getElementById('text').value = speakers[speaker].sample;
+        });
+
+        // Check model status on load
+        fetch('/api/status')
+            .then(r => r.json())
+            .then(data => {
+                if (data.loaded) {
+                    document.getElementById('statusIndicator').className = 'status-indicator status-loaded';
+                    document.getElementById('statusText').textContent = `Model loaded on ${data.device}`;
+                    document.getElementById('loadModelBtn').disabled = true;
+                    document.getElementById('generateBtn').disabled = false;
+                } else {
+                    document.getElementById('statusIndicator').className = 'status-indicator status-not-loaded';
+                    document.getElementById('statusText').textContent = data.error ? `Error: ${data.error}` : 'Model not loaded';
+                }
+            });
+    </script>
+</body>
+</html>
