@@ -87,47 +87,72 @@ def load_model(model_type):
     unload_current_model()
 
     try:
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+        # Check CUDA availability
+        cuda_available = torch.cuda.is_available()
+        device = "cuda:0" if cuda_available else "cpu"
+        dtype = torch.bfloat16 if cuda_available else torch.float32
+
+        print(f"CUDA available: {cuda_available}")
+        if cuda_available:
+            print(f"CUDA device: {torch.cuda.get_device_name(0)}")
+            print(f"CUDA memory before load: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
 
         if model_type == "custom":
             # Load CustomVoice model for preset speakers
-            print(f"Loading CustomVoice model on {device}...")
+            print(f"Loading CustomVoice model...")
             try:
                 current_model = Qwen3TTSModel.from_pretrained(
                     "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
-                    device_map=device,
-                    dtype=dtype,
+                    torch_dtype=dtype,
                     attn_implementation="flash_attention_2",
                 )
-            except Exception:
+            except Exception as e:
+                print(f"Flash attention failed ({e}), trying eager...")
                 current_model = Qwen3TTSModel.from_pretrained(
                     "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
-                    device_map=device,
-                    dtype=dtype,
+                    torch_dtype=dtype,
                     attn_implementation="eager",
                 )
+
+            # Explicitly move to GPU if available
+            if cuda_available:
+                current_model = current_model.to("cuda")
+                print(f"Model moved to CUDA")
+
             current_model_type = "custom"
             print("CustomVoice model loaded successfully!")
         else:
             # Load Base model for voice cloning
-            print(f"Loading Base (cloning) model on {device}...")
+            print(f"Loading Base (cloning) model...")
             try:
                 current_model = Qwen3TTSModel.from_pretrained(
                     "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
-                    device_map=device,
-                    dtype=dtype,
+                    torch_dtype=dtype,
                     attn_implementation="flash_attention_2",
                 )
-            except Exception:
+            except Exception as e:
+                print(f"Flash attention failed ({e}), trying eager...")
                 current_model = Qwen3TTSModel.from_pretrained(
                     "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
-                    device_map=device,
-                    dtype=dtype,
+                    torch_dtype=dtype,
                     attn_implementation="eager",
                 )
+
+            # Explicitly move to GPU if available
+            if cuda_available:
+                current_model = current_model.to("cuda")
+                print(f"Model moved to CUDA")
+
             current_model_type = "clone"
             print("Base (cloning) model loaded successfully!")
+
+        # Verify model is on GPU
+        if cuda_available:
+            print(f"CUDA memory after load: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
+            # Check model device
+            model_device = next(current_model.parameters()).device
+            print(f"Model is on device: {model_device}")
+            device = str(model_device)
 
         model_status["loaded"] = True
         model_status["device"] = device
@@ -138,6 +163,8 @@ def load_model(model_type):
         model_status["error"] = str(e)
         model_status["loaded"] = False
         print(f"Failed to load model: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
