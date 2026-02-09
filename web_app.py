@@ -51,6 +51,27 @@ LANGUAGES = ["Auto", "Chinese", "English", "Japanese", "Korean",
              "German", "French", "Russian", "Portuguese", "Spanish", "Italian"]
 
 
+def get_gpu_info():
+    """Get GPU information - supports both NVIDIA (CUDA) and AMD (ROCm)"""
+    if torch.cuda.is_available():
+        # Check if it's ROCm (AMD) or CUDA (NVIDIA)
+        if hasattr(torch.version, 'hip') and torch.version.hip is not None:
+            return {
+                'available': True,
+                'type': 'AMD ROCm',
+                'device': 'hip',
+                'name': torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else 'AMD GPU'
+            }
+        else:
+            return {
+                'available': True,
+                'type': 'NVIDIA CUDA',
+                'device': 'cuda',
+                'name': torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else 'NVIDIA GPU'
+            }
+    return {'available': False, 'type': 'CPU', 'device': 'cpu', 'name': 'CPU'}
+
+
 def unload_current_model():
     """Unload the current model to free up VRAM"""
     global current_model, current_model_type
@@ -61,9 +82,10 @@ def unload_current_model():
         current_model = None
         current_model_type = None
 
-        # Force garbage collection and clear CUDA cache
+        # Force garbage collection and clear GPU cache
         gc.collect()
-        if torch.cuda.is_available():
+        gpu_info = get_gpu_info()
+        if gpu_info['available']:
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
         print("Model unloaded successfully.")
@@ -87,15 +109,16 @@ def load_model(model_type):
     unload_current_model()
 
     try:
-        # Check CUDA availability
-        cuda_available = torch.cuda.is_available()
-        device = "cuda:0" if cuda_available else "cpu"
-        dtype = torch.bfloat16 if cuda_available else torch.float32
+        # Get GPU info (NVIDIA or AMD)
+        gpu_info = get_gpu_info()
+        device_name = gpu_info['device']
+        device_id = f"{device_name}:0" if gpu_info['available'] else "cpu"
+        dtype = torch.bfloat16 if gpu_info['available'] else torch.float32
 
-        print(f"CUDA available: {cuda_available}")
-        if cuda_available:
-            print(f"CUDA device: {torch.cuda.get_device_name(0)}")
-            print(f"CUDA memory before load: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
+        print(f"GPU Info: {gpu_info}")
+        if gpu_info['available']:
+            print(f"GPU: {gpu_info['name']}")
+            print(f"GPU memory before load: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
 
         if model_type == "custom":
             # Load CustomVoice model for preset speakers
@@ -115,9 +138,9 @@ def load_model(model_type):
                 )
 
             # Explicitly move to GPU if available
-            if cuda_available:
-                current_model = current_model.to("cuda")
-                print(f"Model moved to CUDA")
+            if gpu_info['available']:
+                current_model = current_model.to(device_id)
+                print(f"Model moved to {device_id}")
 
             current_model_type = "custom"
             print("CustomVoice model loaded successfully!")
@@ -139,23 +162,23 @@ def load_model(model_type):
                 )
 
             # Explicitly move to GPU if available
-            if cuda_available:
-                current_model = current_model.to("cuda")
-                print(f"Model moved to CUDA")
+            if gpu_info['available']:
+                current_model = current_model.to(device_id)
+                print(f"Model moved to {device_id}")
 
             current_model_type = "clone"
             print("Base (cloning) model loaded successfully!")
 
         # Verify model is on GPU
-        if cuda_available:
-            print(f"CUDA memory after load: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
+        if gpu_info['available']:
+            print(f"GPU memory after load: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
             # Check model device
             model_device = next(current_model.parameters()).device
             print(f"Model is on device: {model_device}")
-            device = str(model_device)
+            device_id = str(model_device)
 
         model_status["loaded"] = True
-        model_status["device"] = device
+        model_status["device"] = device_id
         model_status["error"] = None
         model_status["type"] = model_type
         return True
@@ -371,6 +394,12 @@ if __name__ == "__main__":
     print("Qwen TTS Web Interface with Voice Cloning")
     print("=" * 60)
     print(f"Model package available: {MODEL_AVAILABLE}")
+
+    # Show GPU info at startup
+    gpu_info = get_gpu_info()
+    print(f"GPU: {gpu_info['name']} ({gpu_info['type']})")
+    print(f"GPU Available: {gpu_info['available']}")
+
     print("")
     print("Features:")
     print("  - Preset Voices: 9 built-in speakers")
