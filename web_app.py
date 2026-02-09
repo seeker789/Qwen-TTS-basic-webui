@@ -1,6 +1,7 @@
 """
 Qwen TTS Web Interface with Voice Cloning
 A Flask-based web UI for Qwen3-TTS supporting preset voices and voice cloning
+Only one model is kept in memory at a time to save VRAM.
 """
 
 from flask import Flask, render_template, request, jsonify, send_file
@@ -10,6 +11,7 @@ import io
 import os
 import base64
 import tempfile
+import gc
 from datetime import datetime
 
 try:
@@ -22,13 +24,12 @@ except ImportError:
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file upload
 
-# Global model instances
-model_custom = None  # For preset voices
-model_clone = None   # For voice cloning
+# Global model instance (only one loaded at a time)
+current_model = None
+current_model_type = None  # 'custom' or 'clone'
 
-# Separate status for each model
-custom_model_status = {"loaded": False, "device": None, "error": None}
-clone_model_status = {"loaded": False, "device": None, "error": None}
+# Model status
+model_status = {"loaded": False, "device": None, "error": None, "type": None}
 
 # Cached voice clone prompts
 voice_clone_cache = {}
@@ -50,89 +51,93 @@ LANGUAGES = ["Auto", "Chinese", "English", "Japanese", "Korean",
              "German", "French", "Russian", "Portuguese", "Spanish", "Italian"]
 
 
-def load_custom_model():
-    """Load the CustomVoice model for preset speakers"""
-    global model_custom, custom_model_status
+def unload_current_model():
+    """Unload the current model to free up VRAM"""
+    global current_model, current_model_type
+
+    if current_model is not None:
+        print(f"Unloading {current_model_type} model to free VRAM...")
+        del current_model
+        current_model = None
+        current_model_type = None
+
+        # Force garbage collection and clear CUDA cache
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+        print("Model unloaded successfully.")
+
+
+def load_model(model_type):
+    """Load the specified TTS model, unloading any existing model first"""
+    global current_model, current_model_type, model_status
 
     if not MODEL_AVAILABLE:
-        custom_model_status["error"] = "qwen-tts package not installed"
+        model_status["error"] = "qwen-tts package not installed"
         return False
 
-    if model_custom is not None:
-        custom_model_status["loaded"] = True
+    # If requested model is already loaded, just return success
+    if current_model_type == model_type and current_model is not None:
+        model_status["loaded"] = True
+        model_status["type"] = model_type
         return True
+
+    # Unload any existing model first
+    unload_current_model()
 
     try:
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
 
-        print(f"Loading CustomVoice model on {device}...")
-        try:
-            model_custom = Qwen3TTSModel.from_pretrained(
-                "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
-                device_map=device,
-                dtype=dtype,
-                attn_implementation="flash_attention_2",
-            )
-        except Exception:
-            model_custom = Qwen3TTSModel.from_pretrained(
-                "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
-                device_map=device,
-                dtype=dtype,
-                attn_implementation="eager",
-            )
+        if model_type == "custom":
+            # Load CustomVoice model for preset speakers
+            print(f"Loading CustomVoice model on {device}...")
+            try:
+                current_model = Qwen3TTSModel.from_pretrained(
+                    "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+                    device_map=device,
+                    dtype=dtype,
+                    attn_implementation="flash_attention_2",
+                )
+            except Exception:
+                current_model = Qwen3TTSModel.from_pretrained(
+                    "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+                    device_map=device,
+                    dtype=dtype,
+                    attn_implementation="eager",
+                )
+            current_model_type = "custom"
+            print("CustomVoice model loaded successfully!")
+        else:
+            # Load Base model for voice cloning
+            print(f"Loading Base (cloning) model on {device}...")
+            try:
+                current_model = Qwen3TTSModel.from_pretrained(
+                    "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+                    device_map=device,
+                    dtype=dtype,
+                    attn_implementation="flash_attention_2",
+                )
+            except Exception:
+                current_model = Qwen3TTSModel.from_pretrained(
+                    "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+                    device_map=device,
+                    dtype=dtype,
+                    attn_implementation="eager",
+                )
+            current_model_type = "clone"
+            print("Base (cloning) model loaded successfully!")
 
-        custom_model_status["loaded"] = True
-        custom_model_status["device"] = device
-        custom_model_status["error"] = None
-        print("CustomVoice model loaded successfully!")
+        model_status["loaded"] = True
+        model_status["device"] = device
+        model_status["error"] = None
+        model_status["type"] = model_type
         return True
     except Exception as e:
-        custom_model_status["error"] = str(e)
-        print(f"Failed to load CustomVoice model: {e}")
-        return False
-
-
-def load_clone_model():
-    """Load the Base model for voice cloning"""
-    global model_clone, clone_model_status
-
-    if not MODEL_AVAILABLE:
-        clone_model_status["error"] = "qwen-tts package not installed"
-        return False
-
-    if model_clone is not None:
-        clone_model_status["loaded"] = True
-        return True
-
-    try:
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
-
-        print(f"Loading Base (cloning) model on {device}...")
-        try:
-            model_clone = Qwen3TTSModel.from_pretrained(
-                "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
-                device_map=device,
-                dtype=dtype,
-                attn_implementation="flash_attention_2",
-            )
-        except Exception:
-            model_clone = Qwen3TTSModel.from_pretrained(
-                "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
-                device_map=device,
-                dtype=dtype,
-                attn_implementation="eager",
-            )
-
-        clone_model_status["loaded"] = True
-        clone_model_status["device"] = device
-        clone_model_status["error"] = None
-        print("Base (cloning) model loaded successfully!")
-        return True
-    except Exception as e:
-        clone_model_status["error"] = str(e)
-        print(f"Failed to load Base model: {e}")
+        model_status["error"] = str(e)
+        model_status["loaded"] = False
+        print(f"Failed to load model: {e}")
         return False
 
 
@@ -142,38 +147,43 @@ def index():
     return render_template("index.html",
                          speakers=SPEAKERS,
                          languages=LANGUAGES,
-                         custom_status=custom_model_status,
-                         clone_status=clone_model_status)
+                         model_status=model_status)
 
 
 @app.route("/api/status")
 def status():
-    """Get both model statuses"""
-    return jsonify({
-        "custom": custom_model_status,
-        "clone": clone_model_status
-    })
+    """Get current model status"""
+    return jsonify(model_status)
 
 
-@app.route("/api/load_custom_model", methods=["POST"])
-def api_load_custom_model():
-    """API endpoint to load the CustomVoice model"""
-    success = load_custom_model()
-    return jsonify({"success": success, **custom_model_status})
+@app.route("/api/load_model", methods=["POST"])
+def api_load_model():
+    """API endpoint to load a model (unloads previous if any)"""
+    data = request.json or {}
+    model_type = data.get("type", "custom")  # "custom" or "clone"
+
+    success = load_model(model_type)
+    return jsonify({"success": success, **model_status})
 
 
-@app.route("/api/load_clone_model", methods=["POST"])
-def api_load_clone_model():
-    """API endpoint to load the Base (cloning) model"""
-    success = load_clone_model()
-    return jsonify({"success": success, **clone_model_status})
+@app.route("/api/unload_model", methods=["POST"])
+def api_unload_model():
+    """API endpoint to unload the current model"""
+    unload_current_model()
+    model_status["loaded"] = False
+    model_status["device"] = None
+    model_status["type"] = None
+    return jsonify({"success": True, **model_status})
 
 
 @app.route("/api/generate", methods=["POST"])
 def generate():
     """Generate speech from text using preset voices"""
-    if not custom_model_status["loaded"] or not model_custom:
-        return jsonify({"error": "CustomVoice model not loaded. Please load the model in the Preset Voices section."}), 400
+    if not model_status["loaded"] or current_model is None:
+        return jsonify({"error": "No model loaded. Please load the CustomVoice model first."}), 400
+
+    if current_model_type != "custom":
+        return jsonify({"error": "Wrong model loaded. Please switch to Preset Voices mode and load the model."}), 400
 
     data = request.json
     text = data.get("text", "").strip()
@@ -185,7 +195,7 @@ def generate():
         return jsonify({"error": "No text provided"}), 400
 
     try:
-        wavs, sr = model_custom.generate_custom_voice(
+        wavs, sr = current_model.generate_custom_voice(
             text=text,
             language=language,
             speaker=speaker,
@@ -211,8 +221,11 @@ def generate():
 @app.route("/api/clone_voice", methods=["POST"])
 def clone_voice():
     """Generate speech using voice cloning"""
-    if not clone_model_status["loaded"] or not model_clone:
-        return jsonify({"error": "Base model not loaded. Please load the model in the Voice Cloning section."}), 400
+    if not model_status["loaded"] or current_model is None:
+        return jsonify({"error": "No model loaded. Please load the Base model first."}), 400
+
+    if current_model_type != "clone":
+        return jsonify({"error": "Wrong model loaded. Please switch to Voice Cloning mode and load the model."}), 400
 
     text = request.form.get("text", "").strip()
     language = request.form.get("language", "English")
@@ -243,7 +256,7 @@ def clone_voice():
             try:
                 # Create voice clone prompt for reuse
                 if ref_text:
-                    voice_clone_prompt = model_clone.create_voice_clone_prompt(
+                    voice_clone_prompt = current_model.create_voice_clone_prompt(
                         ref_audio=ref_audio_path,
                         ref_text=ref_text,
                         x_vector_only_mode=False,
@@ -253,7 +266,7 @@ def clone_voice():
                     voice_clone_cache[cache_key] = voice_clone_prompt
                 else:
                     # Use x_vector_only mode if no transcript provided
-                    voice_clone_prompt = model_clone.create_voice_clone_prompt(
+                    voice_clone_prompt = current_model.create_voice_clone_prompt(
                         ref_audio=ref_audio_path,
                         x_vector_only_mode=True,
                     )
@@ -263,7 +276,7 @@ def clone_voice():
             return jsonify({"error": "No reference audio provided"}), 400
 
         # Generate cloned voice
-        wavs, sr = model_clone.generate_voice_clone(
+        wavs, sr = current_model.generate_voice_clone(
             text=text,
             language=language,
             voice_clone_prompt=voice_clone_prompt,
@@ -298,11 +311,11 @@ def download():
     if not text:
         return jsonify({"error": "No text provided"}), 400
 
-    if not model_custom:
+    if not model_status["loaded"] or current_model is None or current_model_type != "custom":
         return jsonify({"error": "CustomVoice model not loaded"}), 400
 
     try:
-        wavs, sr = model_custom.generate_custom_voice(
+        wavs, sr = current_model.generate_custom_voice(
             text=text,
             language=language,
             speaker=speaker,
@@ -333,8 +346,11 @@ if __name__ == "__main__":
     print(f"Model package available: {MODEL_AVAILABLE}")
     print("")
     print("Features:")
-    print("  - Preset Voices: 9 built-in speakers (load CustomVoice model)")
-    print("  - Voice Cloning: Clone any voice (load Base model)")
+    print("  - Preset Voices: 9 built-in speakers")
+    print("  - Voice Cloning: Clone any voice")
+    print("")
+    print("Note: Only one model is kept in memory at a time to save VRAM.")
+    print("      Switching modes will automatically unload the previous model.")
     print("")
     print("Open http://localhost:5000 in your browser")
     print("Press Ctrl+C to stop")

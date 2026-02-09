@@ -17,7 +17,7 @@
             padding: 40px 20px;
         }
         .container {
-            max-width: 900px;
+            max-width: 700px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -77,65 +77,104 @@
             background: #218838;
         }
 
-        /* Two Column Layout */
-        .modes-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
+        /* Mode Toggle at Top */
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 12px;
         }
-        @media (max-width: 768px) {
-            .modes-container {
-                grid-template-columns: 1fr;
-            }
+        .mode-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            background: white;
         }
+        .mode-option:hover {
+            border-color: #667eea;
+        }
+        .mode-option.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .mode-option h3 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+        .mode-option p {
+            color: #666;
+            font-size: 0.85em;
+        }
+        .mode-option .status-badge {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        .status-badge.not-loaded {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-badge.loaded {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        /* Model Load Section */
+        .model-load-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .model-load-section .status-text {
+            margin-bottom: 15px;
+            color: #666;
+        }
+        .model-load-section .status-text.loaded {
+            color: #28a745;
+            font-weight: 600;
+        }
+        .model-load-section .status-text.loading {
+            color: #ffc107;
+        }
+        .model-load-section .status-text.error {
+            color: #dc3545;
+        }
+
+        /* Card Content */
         .mode-card {
             border: 2px solid #e0e0e0;
             border-radius: 12px;
-            padding: 20px;
+            padding: 25px;
             background: #fafafa;
         }
-        .mode-card h2 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.3em;
-        }
-        .model-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 0.9em;
-        }
-        .status-indicator {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-        }
-        .status-loaded { background: #28a745; }
-        .status-not-loaded { background: #dc3545; }
-        .status-loading { background: #ffc107; animation: pulse 1s infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .mode-card.hidden {
+            display: none;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         .form-group label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             font-weight: 600;
             color: #333;
-            font-size: 0.9em;
         }
         .form-control {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 14px;
@@ -150,30 +189,30 @@
         }
         textarea.form-control {
             resize: vertical;
-            min-height: 80px;
+            min-height: 100px;
         }
         input[type="file"].form-control {
             padding: 8px;
         }
         .speaker-info {
-            font-size: 0.85em;
+            font-size: 0.9em;
             color: #666;
             margin-top: 5px;
         }
         .hint {
-            font-size: 0.8em;
+            font-size: 0.85em;
             color: #888;
-            margin-top: 4px;
+            margin-top: 5px;
         }
         .actions {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
-            margin-top: 15px;
+            margin-top: 20px;
         }
         .audio-player {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 25px;
+            padding: 20px;
             background: #f8f9fa;
             border-radius: 10px;
             display: none;
@@ -182,9 +221,8 @@
             display: block;
         }
         .audio-player h3 {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             color: #333;
-            font-size: 1em;
         }
         audio {
             width: 100%;
@@ -192,19 +230,19 @@
         .loading {
             display: none;
             text-align: center;
-            padding: 15px;
+            padding: 20px;
         }
         .loading.active {
             display: block;
         }
         .spinner {
-            width: 30px;
-            height: 30px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 15px;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -217,7 +255,6 @@
             border-radius: 5px;
             margin-top: 10px;
             display: none;
-            font-size: 0.9em;
         }
         .error.active {
             display: block;
@@ -229,53 +266,46 @@
             border-radius: 5px;
             margin-top: 10px;
             display: none;
-            font-size: 0.9em;
         }
         .success.active {
             display: block;
         }
         .voice-clone-info {
             background: #e7f3ff;
-            border-left: 3px solid #667eea;
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 0 6px 6px 0;
-            font-size: 0.85em;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
         }
         .voice-clone-info h4 {
             color: #667eea;
-            margin-bottom: 6px;
-            font-size: 0.95em;
+            margin-bottom: 8px;
         }
         .voice-clone-info ul {
-            margin-left: 18px;
+            margin-left: 20px;
             color: #555;
         }
         .voice-clone-info li {
-            margin-bottom: 3px;
+            margin-bottom: 5px;
         }
         .cached-voice {
             background: #d4edda;
-            padding: 8px;
+            padding: 10px;
             border-radius: 5px;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             display: none;
-            font-size: 0.85em;
         }
         .cached-voice.active {
             display: block;
         }
-        .global-status {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 10px;
+        .vram-notice {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 12px;
+            border-radius: 8px;
             margin-bottom: 20px;
-            text-align: center;
-            color: #666;
-        }
-        .global-status.loaded {
-            background: #d4edda;
-            color: #155724;
+            font-size: 0.9em;
+            color: #856404;
         }
     </style>
 </head>
@@ -286,147 +316,148 @@
             <p>Text-to-Speech with Voice Cloning</p>
         </div>
         <div class="content">
-            <!-- Global Status -->
-            <div class="global-status" id="globalStatus">
-                Ready to load models
+            <!-- VRAM Notice -->
+            <div class="vram-notice">
+                <strong>Note:</strong> Only one model is kept in memory at a time to save VRAM.
+                Switching modes will automatically unload the previous model before loading the new one.
             </div>
 
-            <!-- Two Column Layout -->
-            <div class="modes-container">
-                <!-- Preset Voices Column -->
-                <div class="mode-card">
-                    <h2>Preset Voices</h2>
+            <!-- Mode Selector at Top -->
+            <div class="mode-selector">
+                <div class="mode-option active" id="modePresetOption" onclick="selectMode('preset')">
+                    <h3>Preset Voices</h3>
+                    <p>9 built-in speakers</p>
+                    <span class="status-badge not-loaded" id="presetBadge">Not Loaded</span>
+                </div>
+                <div class="mode-option" id="modeCloneOption" onclick="selectMode('clone')">
+                    <h3>Voice Cloning</h3>
+                    <p>Clone any voice</p>
+                    <span class="status-badge not-loaded" id="cloneBadge">Not Loaded</span>
+                </div>
+            </div>
 
-                    <div class="model-status">
-                        <div class="status-indicator" id="customStatusIndicator"></div>
-                        <span id="customStatusText">Not loaded</span>
-                        <button class="btn btn-primary" id="loadCustomModelBtn" style="margin-left: auto; padding: 8px 16px; font-size: 12px;">
-                            Load Model
-                        </button>
-                    </div>
+            <!-- Model Load Section -->
+            <div class="model-load-section">
+                <div class="status-text" id="modelStatusText">Select a mode and load the model</div>
+                <button class="btn btn-primary" id="loadModelBtn" onclick="loadCurrentModel()">
+                    Load Model
+                </button>
+            </div>
 
-                    <div class="form-group">
-                        <label for="speaker">Speaker</label>
-                        <select class="form-control" id="speaker" name="speaker">
-                            <option value="Vivian">Vivian (Chinese)</option>
-                            <option value="Serena">Serena (Chinese)</option>
-                            <option value="Uncle_Fu">Uncle_Fu (Chinese)</option>
-                            <option value="Dylan">Dylan (Chinese - Beijing)</option>
-                            <option value="Eric">Eric (Chinese - Sichuan)</option>
-                            <option value="Ryan">Ryan (English)</option>
-                            <option value="Aiden">Aiden (English)</option>
-                            <option value="Ono_Anna">Ono_Anna (Japanese)</option>
-                            <option value="Sohee">Sohee (Korean)</option>
-                        </select>
-                        <div class="speaker-info" id="speakerInfo">Bright, slightly edgy young female voice</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="instruct">Instruction (Optional)</label>
-                        <input type="text" class="form-control" id="instruct" name="instruct"
-                               placeholder="e.g., speak happily, whisper, angry tone">
-                        <div class="hint">Control tone, emotion, and speaking style</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="textPreset">Text to Synthesize</label>
-                        <textarea class="form-control" id="textPreset" placeholder="Enter your text here..."></textarea>
-                    </div>
-
-                    <div class="actions">
-                        <button type="button" class="btn btn-primary" id="generateBtn" disabled>
-                            Generate
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="downloadPresetBtn" disabled>
-                            Download
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="sampleBtn" style="font-size: 12px;">
-                            Sample
-                        </button>
-                    </div>
-
-                    <div class="loading" id="loadingPreset">
-                        <div class="spinner"></div>
-                        <p>Generating...</p>
-                    </div>
-
-                    <div class="error" id="errorPreset"></div>
-                    <div class="success" id="successPreset"></div>
-
-                    <div class="audio-player" id="audioPlayerPreset">
-                        <h3>Generated Audio</h3>
-                        <audio id="audioPreset" controls></audio>
-                    </div>
+            <!-- Preset Voices Card -->
+            <div class="mode-card" id="presetCard">
+                <div class="form-group">
+                    <label for="speaker">Speaker</label>
+                    <select class="form-control" id="speaker" name="speaker">
+                        <option value="Vivian">Vivian (Chinese)</option>
+                        <option value="Serena">Serena (Chinese)</option>
+                        <option value="Uncle_Fu">Uncle_Fu (Chinese)</option>
+                        <option value="Dylan">Dylan (Chinese - Beijing)</option>
+                        <option value="Eric">Eric (Chinese - Sichuan)</option>
+                        <option value="Ryan">Ryan (English)</option>
+                        <option value="Aiden">Aiden (English)</option>
+                        <option value="Ono_Anna">Ono_Anna (Japanese)</option>
+                        <option value="Sohee">Sohee (Korean)</option>
+                    </select>
+                    <div class="speaker-info" id="speakerInfo">Bright, slightly edgy young female voice</div>
                 </div>
 
-                <!-- Voice Cloning Column -->
-                <div class="mode-card">
-                    <h2>Voice Cloning</h2>
+                <div class="form-group">
+                    <label for="instruct">Instruction (Optional)</label>
+                    <input type="text" class="form-control" id="instruct" name="instruct"
+                           placeholder="e.g., speak happily, whisper, angry tone">
+                    <div class="hint">Control tone, emotion, and speaking style with natural language</div>
+                </div>
 
-                    <div class="model-status">
-                        <div class="status-indicator" id="cloneStatusIndicator"></div>
-                        <span id="cloneStatusText">Not loaded</span>
-                        <button class="btn btn-primary" id="loadCloneModelBtn" style="margin-left: auto; padding: 8px 16px; font-size: 12px;">
-                            Load Model
-                        </button>
-                    </div>
+                <div class="form-group">
+                    <label for="textPreset">Text to Synthesize</label>
+                    <textarea class="form-control" id="textPreset" placeholder="Enter your text here..."></textarea>
+                </div>
 
-                    <div class="voice-clone-info">
-                        <h4>Guidelines</h4>
-                        <ul>
-                            <li>Upload 5-15 seconds of clear speech</li>
-                            <li>Provide the transcript</li>
-                            <li>No background noise/music</li>
-                            <li>Voice will be cached for reuse</li>
-                        </ul>
-                    </div>
+                <div class="actions">
+                    <button type="button" class="btn btn-primary" id="generateBtn" disabled>
+                        Generate Speech
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="downloadPresetBtn" disabled>
+                        Download WAV
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="sampleBtn">
+                        Load Sample
+                    </button>
+                </div>
 
-                    <div class="cached-voice" id="cachedVoice">
-                        <strong>Voice Cached!</strong>
-                        <label style="margin-left: 10px;">
-                            <input type="checkbox" id="useCache"> Use cached
-                        </label>
-                    </div>
+                <div class="loading" id="loadingPreset">
+                    <div class="spinner"></div>
+                    <p>Generating speech...</p>
+                </div>
 
-                    <div class="form-group">
-                        <label for="refAudio">Reference Audio</label>
-                        <input type="file" class="form-control" id="refAudio" name="refAudio"
-                               accept=".wav,.mp3,.m4a,.ogg">
-                        <div class="hint">WAV, MP3, M4A (5-15 seconds)</div>
-                    </div>
+                <div class="error" id="errorPreset"></div>
+                <div class="success" id="successPreset"></div>
 
-                    <div class="form-group">
-                        <label for="refText">Reference Transcript</label>
-                        <textarea class="form-control" id="refText" rows="2"
-                                  placeholder="What is being said in the audio..."></textarea>
-                    </div>
+                <div class="audio-player" id="audioPlayerPreset">
+                    <h3>Generated Audio</h3>
+                    <audio id="audioPreset" controls></audio>
+                </div>
+            </div>
 
-                    <div class="form-group">
-                        <label for="textClone">Text to Synthesize</label>
-                        <textarea class="form-control" id="textClone" placeholder="Enter your text here..."></textarea>
-                    </div>
+            <!-- Voice Cloning Card -->
+            <div class="mode-card hidden" id="cloneCard">
+                <div class="voice-clone-info">
+                    <h4>Voice Cloning Guidelines</h4>
+                    <ul>
+                        <li>Upload 5-15 seconds of clear speech audio (WAV, MP3, M4A)</li>
+                        <li>Provide the transcript of what's being said in the audio</li>
+                        <li>No background music, noise, or other voices</li>
+                        <li>Once cloned, the voice will be cached for reuse</li>
+                    </ul>
+                </div>
 
-                    <div class="actions">
-                        <button type="button" class="btn btn-success" id="cloneBtn" disabled>
-                            Clone Voice
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="downloadCloneBtn" disabled>
-                            Download
-                        </button>
-                    </div>
+                <div class="cached-voice" id="cachedVoice">
+                    <strong>Voice Cached!</strong> You can generate more text with the same voice without re-uploading.
+                    <label style="margin-left: 15px;">
+                        <input type="checkbox" id="useCache"> Use cached voice
+                    </label>
+                </div>
 
-                    <div class="loading" id="loadingClone">
-                        <div class="spinner"></div>
-                        <p>Cloning...</p>
-                    </div>
+                <div class="form-group">
+                    <label for="refAudio">Reference Audio File</label>
+                    <input type="file" class="form-control" id="refAudio" name="refAudio"
+                           accept=".wav,.mp3,.m4a,.ogg">
+                    <div class="hint">5-15 seconds of clear speech</div>
+                </div>
 
-                    <div class="error" id="errorClone"></div>
-                    <div class="success" id="successClone"></div>
+                <div class="form-group">
+                    <label for="refText">Reference Transcript (Optional but recommended)</label>
+                    <textarea class="form-control" id="refText" rows="2"
+                              placeholder="Type exactly what is being said in the reference audio..."></textarea>
+                    <div class="hint">Providing transcript improves cloning quality significantly</div>
+                </div>
 
-                    <div class="audio-player" id="audioPlayerClone">
-                        <h3>Generated Audio</h3>
-                        <audio id="audioClone" controls></audio>
-                    </div>
+                <div class="form-group">
+                    <label for="textClone">Text to Synthesize</label>
+                    <textarea class="form-control" id="textClone" placeholder="Enter your text here..."></textarea>
+                </div>
+
+                <div class="actions">
+                    <button type="button" class="btn btn-success" id="cloneBtn" disabled>
+                        Clone Voice
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="downloadCloneBtn" disabled>
+                        Download WAV
+                    </button>
+                </div>
+
+                <div class="loading" id="loadingClone">
+                    <div class="spinner"></div>
+                    <p>Cloning voice and generating speech...</p>
+                </div>
+
+                <div class="error" id="errorClone"></div>
+                <div class="success" id="successClone"></div>
+
+                <div class="audio-player" id="audioPlayerClone">
+                    <h3>Generated Audio</h3>
+                    <audio id="audioClone" controls></audio>
                 </div>
             </div>
         </div>
@@ -445,13 +476,11 @@
             "Sohee": { desc: "Warm Korean female voice with rich emotion", sample: "안녕하세요! 오늘 날씨가 정말 좋네요。" }
         };
 
+        let currentMode = 'preset'; // 'preset' or 'clone'
         let customAudio = null;
         let cloneAudio = null;
         let cachedVoiceKey = null;
-
-        // Custom model status
-        let customLoaded = false;
-        let cloneLoaded = false;
+        let loadedModelType = null; // Tracks which model is currently loaded
 
         // Speaker info update
         document.getElementById('speaker').addEventListener('change', function() {
@@ -459,81 +488,118 @@
             document.getElementById('speakerInfo').textContent = info.desc;
         });
 
-        // Load CustomVoice model
-        document.getElementById('loadCustomModelBtn').addEventListener('click', async function() {
-            this.disabled = true;
-            document.getElementById('customStatusIndicator').className = 'status-indicator status-loading';
-            document.getElementById('customStatusText').textContent = 'Loading...';
-            document.getElementById('errorPreset').classList.remove('active');
+        function selectMode(mode) {
+            currentMode = mode;
 
-            try {
-                const response = await fetch('/api/load_custom_model', { method: 'POST' });
-                const data = await response.json();
+            // Update toggle visuals
+            document.querySelectorAll('.mode-option').forEach(el => el.classList.remove('active'));
+            document.getElementById(mode === 'preset' ? 'modePresetOption' : 'modeCloneOption').classList.add('active');
 
-                if (data.success) {
-                    customLoaded = true;
-                    document.getElementById('customStatusText').textContent = `Loaded on ${data.device}`;
-                    document.getElementById('customStatusIndicator').className = 'status-indicator status-loaded';
-                    document.getElementById('generateBtn').disabled = false;
-                    document.getElementById('successPreset').textContent = 'CustomVoice model loaded!';
-                    document.getElementById('successPreset').classList.add('active');
-                    setTimeout(() => document.getElementById('successPreset').classList.remove('active'), 3000);
-                    updateGlobalStatus();
-                } else {
-                    throw new Error(data.error || 'Failed to load model');
-                }
-            } catch (err) {
-                document.getElementById('customStatusText').textContent = 'Failed';
-                document.getElementById('customStatusIndicator').className = 'status-indicator status-not-loaded';
-                document.getElementById('errorPreset').textContent = err.message;
-                document.getElementById('errorPreset').classList.add('active');
-                this.disabled = false;
+            // Show/hide cards
+            document.getElementById('presetCard').classList.toggle('hidden', mode !== 'preset');
+            document.getElementById('cloneCard').classList.toggle('hidden', mode !== 'clone');
+
+            // Update status text based on loaded model
+            updateModelStatusUI();
+        }
+
+        function updateModelStatusUI() {
+            const statusText = document.getElementById('modelStatusText');
+            const loadBtn = document.getElementById('loadModelBtn');
+
+            if (loadedModelType === currentMode) {
+                // Correct model is loaded
+                statusText.textContent = `Model loaded on ${loadedModelType === 'preset' ? 'CustomVoice' : 'Base (cloning)'}`;
+                statusText.className = 'status-text loaded';
+                loadBtn.textContent = 'Model Loaded';
+                loadBtn.disabled = true;
+
+                // Enable generate buttons
+                document.getElementById('generateBtn').disabled = currentMode !== 'preset';
+                document.getElementById('cloneBtn').disabled = currentMode !== 'clone';
+            } else if (loadedModelType === null) {
+                // No model loaded
+                statusText.textContent = `Click "Load Model" to load the ${currentMode === 'preset' ? 'CustomVoice' : 'Base (cloning)'} model`;
+                statusText.className = 'status-text';
+                loadBtn.textContent = 'Load Model';
+                loadBtn.disabled = false;
+
+                // Disable generate buttons
+                document.getElementById('generateBtn').disabled = true;
+                document.getElementById('cloneBtn').disabled = true;
+            } else {
+                // Wrong model loaded (will be unloaded when loading new one)
+                statusText.textContent = `${loadedModelType === 'preset' ? 'CustomVoice' : 'Base (cloning)'} model loaded. Click to switch to ${currentMode === 'preset' ? 'CustomVoice' : 'Base (cloning)'}`;
+                statusText.className = 'status-text';
+                loadBtn.textContent = `Switch to ${currentMode === 'preset' ? 'Preset Voices' : 'Voice Cloning'}`;
+                loadBtn.disabled = false;
+
+                // Disable generate buttons until correct model is loaded
+                document.getElementById('generateBtn').disabled = true;
+                document.getElementById('cloneBtn').disabled = true;
             }
-        });
+        }
 
-        // Load Clone (Base) model
-        document.getElementById('loadCloneModelBtn').addEventListener('click', async function() {
-            this.disabled = true;
-            document.getElementById('cloneStatusIndicator').className = 'status-indicator status-loading';
-            document.getElementById('cloneStatusText').textContent = 'Loading...';
+        async function loadCurrentModel() {
+            const loadBtn = document.getElementById('loadModelBtn');
+            const statusText = document.getElementById('modelStatusText');
+            const modelType = currentMode === 'preset' ? 'custom' : 'clone';
+
+            loadBtn.disabled = true;
+            statusText.textContent = `Loading ${currentMode === 'preset' ? 'CustomVoice' : 'Base (cloning)'} model...`;
+            statusText.className = 'status-text loading';
+
+            // Clear any errors
+            document.getElementById('errorPreset').classList.remove('active');
             document.getElementById('errorClone').classList.remove('active');
 
             try {
-                const response = await fetch('/api/load_clone_model', { method: 'POST' });
+                const response = await fetch('/api/load_model', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type: modelType })
+                });
                 const data = await response.json();
 
                 if (data.success) {
-                    cloneLoaded = true;
-                    document.getElementById('cloneStatusText').textContent = `Loaded on ${data.device}`;
-                    document.getElementById('cloneStatusIndicator').className = 'status-indicator status-loaded';
-                    document.getElementById('cloneBtn').disabled = false;
-                    document.getElementById('successClone').textContent = 'Base model loaded!';
-                    document.getElementById('successClone').classList.add('active');
-                    setTimeout(() => document.getElementById('successClone').classList.remove('active'), 3000);
-                    updateGlobalStatus();
+                    loadedModelType = currentMode;
+
+                    // Update badges
+                    if (currentMode === 'preset') {
+                        document.getElementById('presetBadge').textContent = 'Loaded';
+                        document.getElementById('presetBadge').className = 'status-badge loaded';
+                        document.getElementById('cloneBadge').textContent = 'Not Loaded';
+                        document.getElementById('cloneBadge').className = 'status-badge not-loaded';
+                        document.getElementById('successPreset').textContent = 'CustomVoice model loaded!';
+                        document.getElementById('successPreset').classList.add('active');
+                        setTimeout(() => document.getElementById('successPreset').classList.remove('active'), 3000);
+                    } else {
+                        document.getElementById('cloneBadge').textContent = 'Loaded';
+                        document.getElementById('cloneBadge').className = 'status-badge loaded';
+                        document.getElementById('presetBadge').textContent = 'Not Loaded';
+                        document.getElementById('presetBadge').className = 'status-badge not-loaded';
+                        document.getElementById('successClone').textContent = 'Base (cloning) model loaded!';
+                        document.getElementById('successClone').classList.add('active');
+                        setTimeout(() => document.getElementById('successClone').classList.remove('active'), 3000);
+                    }
+
+                    updateModelStatusUI();
                 } else {
                     throw new Error(data.error || 'Failed to load model');
                 }
             } catch (err) {
-                document.getElementById('cloneStatusText').textContent = 'Failed';
-                document.getElementById('cloneStatusIndicator').className = 'status-indicator status-not-loaded';
-                document.getElementById('errorClone').textContent = err.message;
-                document.getElementById('errorClone').classList.add('active');
-                this.disabled = false;
-            }
-        });
+                statusText.textContent = `Error: ${err.message}`;
+                statusText.className = 'status-text error';
+                loadBtn.textContent = 'Retry Load';
+                loadBtn.disabled = false;
 
-        function updateGlobalStatus() {
-            const statusEl = document.getElementById('globalStatus');
-            if (customLoaded && cloneLoaded) {
-                statusEl.textContent = 'Both models loaded and ready!';
-                statusEl.className = 'global-status loaded';
-            } else if (customLoaded) {
-                statusEl.textContent = 'Preset Voices model loaded. Voice Cloning model available.';
-                statusEl.className = 'global-status loaded';
-            } else if (cloneLoaded) {
-                statusEl.textContent = 'Voice Cloning model loaded. Preset Voices model available.';
-                statusEl.className = 'global-status loaded';
+                if (currentMode === 'preset') {
+                    document.getElementById('errorPreset').textContent = err.message;
+                    document.getElementById('errorPreset').classList.add('active');
+                } else {
+                    document.getElementById('errorClone').textContent = err.message;
+                    document.getElementById('errorClone').classList.add('active');
+                }
             }
         }
 
@@ -671,31 +737,19 @@
         fetch('/api/status')
             .then(r => r.json())
             .then(data => {
-                // Custom model status
-                if (data.custom.loaded) {
-                    customLoaded = true;
-                    document.getElementById('customStatusIndicator').className = 'status-indicator status-loaded';
-                    document.getElementById('customStatusText').textContent = `Loaded on ${data.custom.device}`;
-                    document.getElementById('loadCustomModelBtn').disabled = true;
-                    document.getElementById('generateBtn').disabled = false;
-                } else {
-                    document.getElementById('customStatusIndicator').className = 'status-indicator status-not-loaded';
-                    document.getElementById('customStatusText').textContent = 'Not loaded';
-                }
+                if (data.loaded) {
+                    loadedModelType = data.type === 'custom' ? 'preset' : 'clone';
 
-                // Clone model status
-                if (data.clone.loaded) {
-                    cloneLoaded = true;
-                    document.getElementById('cloneStatusIndicator').className = 'status-indicator status-loaded';
-                    document.getElementById('cloneStatusText').textContent = `Loaded on ${data.clone.device}`;
-                    document.getElementById('loadCloneModelBtn').disabled = true;
-                    document.getElementById('cloneBtn').disabled = false;
-                } else {
-                    document.getElementById('cloneStatusIndicator').className = 'status-indicator status-not-loaded';
-                    document.getElementById('cloneStatusText').textContent = 'Not loaded';
+                    // Update badges
+                    if (data.type === 'custom') {
+                        document.getElementById('presetBadge').textContent = 'Loaded';
+                        document.getElementById('presetBadge').className = 'status-badge loaded';
+                    } else {
+                        document.getElementById('cloneBadge').textContent = 'Loaded';
+                        document.getElementById('cloneBadge').className = 'status-badge loaded';
+                    }
                 }
-
-                updateGlobalStatus();
+                updateModelStatusUI();
             });
     </script>
 </body>
