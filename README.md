@@ -1,15 +1,23 @@
 # Qwen-TTS Basic WebUI
 
-A clean, user-friendly web interface for the [Qwen3-TTS-12Hz-1.7B-CustomVoice](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice) text-to-speech model with **voice cloning** support.
+A clean, user-friendly web interface for the [Qwen3-TTS-12Hz-1.7B-CustomVoice](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice) and [Qwen3-TTS-12Hz-1.7B-Base](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base) text-to-speech models.
 
-![Qwen TTS WebUI Screenshot](qwenttsscreenshot.jpg)
+## Screenshots
+
+### Preset Voices Mode
+![Preset Voices](qwenTTSpresetvoices.jpg)
+
+### Voice Cloning Mode
+![Voice Cloning](qwenTTSvoicecloning.jpg)
 
 ## Features
 
 - **Modern Web Interface** - Clean, responsive design with gradient styling
 - **9 Premium Preset Voices** - Choose from multiple speakers with different languages, genders, and styles
 - **Voice Cloning** - Clone any voice from just 5-15 seconds of audio
-- **Style Control** - Use natural language instructions to control tone, emotion, and prosody
+- **Single Model Loading** - Only one model loaded at a time to save VRAM (works with 8GB GPUs)
+- **GPU Support** - Supports both NVIDIA (CUDA) and AMD (ROCm) GPUs, with automatic CPU fallback
+- **Style Control** - Use natural language instructions to control tone, emotion, and prosody (preset voices)
 - **Multi-language Support** - 10 languages: Chinese, English, Japanese, Korean, German, French, Russian, Portuguese, Spanish, Italian
 - **In-Browser Playback** - Listen to generated speech directly in the browser
 - **WAV Export** - Download generated audio as WAV files
@@ -21,12 +29,13 @@ A clean, user-friendly web interface for the [Qwen3-TTS-12Hz-1.7B-CustomVoice](h
 
 - Python 3.10+
 - CUDA-capable GPU (recommended, 8GB+ VRAM) or CPU
+- For AMD GPUs: ROCm-supported GPU (RX 6000 series or newer, Linux only)
 
 ### Installation
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/Qwen-TTS-basic-webui.git
+git clone https://github.com/seeker789/Qwen-TTS-basic-webui.git
 cd Qwen-TTS-basic-webui
 ```
 
@@ -39,6 +48,14 @@ conda activate qwen-tts
 3. Install dependencies:
 ```bash
 pip install -r requirements.txt
+```
+
+**For NVIDIA GPUs:** PyTorch with CUDA should be installed automatically.
+
+**For AMD GPUs (ROCm):**
+```bash
+pip uninstall torch torchvision torchaudio
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.2
 ```
 
 Optional: Install FlashAttention 2 for reduced GPU memory usage:
@@ -58,22 +75,16 @@ python web_app.py
 http://localhost:5000
 ```
 
-3. **Choose Mode:**
-   - **Preset Voices** - Use one of the 9 built-in speakers
-   - **Voice Cloning** - Clone any voice from audio
+3. **Select Mode** - Click on either "Preset Voices" or "Voice Cloning" card at the top
 
-4. **For Preset Voices:**
-   - Click **"Load Model"** to download the CustomVoice model (~3.5GB on first run)
-   - Select a **Speaker** from the dropdown
-   - (Optional) Enter an **Instruction** to control style/tone
-   - Enter your **text** and click **"Generate Speech"**
+4. **Load Model** - Click "Load Model" button:
+   - Preset Voices loads the CustomVoice model (~3.5GB)
+   - Voice Cloning loads the Base model (~3.5GB)
+   - Previous model is automatically unloaded to save VRAM
 
-5. **For Voice Cloning:**
-   - Click **"Load Model"** to download the Base model (~3.5GB on first run)
-   - Upload a **Reference Audio** file (5-15 seconds of clear speech)
-   - Enter the **Reference Transcript** (what's being said in the audio)
-   - Enter your **text** and click **"Clone Voice"**
-   - The cloned voice will be cached for reuse
+5. **Generate Speech**:
+   - **Preset Voices**: Select a speaker, add optional style instructions, enter text, click "Generate"
+   - **Voice Cloning**: Upload reference audio (5-15 sec), add transcript, enter text, click "Clone Voice"
 
 ## Voice Cloning
 
@@ -122,11 +133,32 @@ Use natural language instructions to control the voice:
 | Component | Minimum | Recommended |
 |-----------|---------|-------------|
 | GPU | CPU only | NVIDIA GPU with 8GB+ VRAM |
+| AMD GPU | Not supported* | RX 6600 XT+ (ROCm, Linux only) |
 | RAM | 8GB | 16GB+ |
-| Storage | 8GB free | 15GB free |
+| Storage | 5GB free | 10GB free |
 | Network | - | Broadband (for model download) |
 
-**Note:** Both models (CustomVoice and Base) are ~3.5GB each. If you want to use both preset voices and voice cloning, you'll need ~7GB for model files.
+**Note on AMD GPUs:** Only one model (~3.5GB) is kept in memory at a time, making it possible to run on 8GB VRAM GPUs.
+
+*AMD RX 5000 series (including 5700 XT) are not supported by ROCm and will use CPU.
+
+## GPU Support Details
+
+### NVIDIA GPUs (CUDA)
+- Full support with best performance
+- GTX 1060 6GB or newer recommended
+- Automatic GPU detection and memory management
+
+### AMD GPUs (ROCm)
+- Limited support - requires Linux
+- RX 6000 series (RDNA2) or newer
+- Install PyTorch with ROCm: `pip install torch --index-url https://download.pytorch.org/whl/rocm6.2`
+- RX 5000 series and older use CPU fallback
+
+### CPU Fallback
+- Works on any system without GPU
+- Slower generation (5-10x slower than GPU)
+- No VRAM limitations
 
 ## Model Cache Location
 
@@ -149,34 +181,35 @@ python qwen_tts_gui.py
 
 ### Model fails to load
 - Ensure you have enough disk space (~3.5GB per model)
-- Check GPU memory availability
-- The model will automatically fall back to CPU if CUDA is unavailable
+- Check GPU memory availability (8GB+ recommended)
+- The model will automatically fall back to CPU if GPU is unavailable
 
 ### Voice cloning quality is poor
 - Use clearer audio with less background noise
 - Ensure the reference transcript matches the audio exactly
 - Try using longer audio samples (10-15 seconds)
 
-### Slow generation
-- Use a GPU for significantly faster inference
-- Close other memory-intensive applications
-- Consider installing FlashAttention 2
+### Slow generation on CPU
+- This is expected - CPU is 5-10x slower than GPU
+- Consider upgrading to an NVIDIA GPU for best performance
 
-### Web interface not accessible
-- Check that port 5000 is not in use by another application
-- To allow external access, modify `web_app.py` and change `host="0.0.0.0"`
+### GPU not detected
+- **NVIDIA**: Install latest drivers and CUDA toolkit
+- **AMD**: Ensure you have ROCm-installed PyTorch (Linux only)
+- Check console output at startup for GPU detection info
 
 ## Project Structure
 
 ```
 Qwen-TTS-basic-webui/
-├── web_app.py              # Flask web application (preset + cloning)
-├── qwen_tts_gui.py         # Desktop GUI (preset voices only)
+├── web_app.py                  # Flask web application (preset + cloning)
+├── qwen_tts_gui.py             # Desktop GUI (preset voices only)
 ├── templates/
-│   └── index.html          # Web interface template
-├── requirements.txt        # Python dependencies
-├── qwenttsscreenshot.jpg   # Screenshot of the web UI
-└── README.md              # This file
+│   └── index.html              # Web interface template
+├── requirements.txt            # Python dependencies
+├── qwenTTSpresetvoices.jpg     # Screenshot: Preset Voices mode
+├── qwenTTSvoicecloning.jpg     # Screenshot: Voice Cloning mode
+└── README.md                   # This file
 ```
 
 ## Dependencies
